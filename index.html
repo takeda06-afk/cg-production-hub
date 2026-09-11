@@ -325,7 +325,9 @@ function undo(){const f=app.frames[activeFrame],l=f.layers[f.activeLayer];if(!f.
 function redo(){const f=app.frames[activeFrame],l=f.layers[f.activeLayer];if(!f.redo.length)return;const x=f.redo.pop();f.history.push(x);l.image=x;delete f._layerCanvases?.[l.id];renderStory();renderVcon();scheduleSave()}
 function addFrame(){app.frames.push(newFrame());activeFrame=app.frames.length-1;renderStory();scheduleSave()}
 function duplicateFrame(i){const f=structuredClone(app.frames[i]);f.id=uid();f.name=f.name+' COPY';f.shotId=null;f.layers.forEach(l=>l.id=uid());f.history=[f.layers[f.activeLayer]?.image||null];f.redo=[];delete f._layerCanvases;app.frames.splice(i+1,0,f);activeFrame=i+1;syncShotOrder();renderStory();scheduleSave()}
-function deleteFrame(i){const f=app.frames[i];if(!confirm(`${f.name}を削除しますか？\nリンク中のSHOTと、そのSHOTに紐づくタスクも削除します。`))return;const shotId=f.shotId;app.frames.splice(i,1);if(shotId){app.shots=app.shots.filter(s=>s.id!==shotId);app.tasks=app.tasks.filter(t=>t.shotId!==shotId)}activeFrame=Math.max(0,Math.min(activeFrame,app.frames.length-1));syncShotOrder();renderAll();scheduleSave()}
+
+/* Removed duplicate declaration: deleteFrame */
+
 function openEditor(i){editorIndex=i;const f=app.frames[i];$('editorTitle').textContent=f.name;const c=$('editorCanvas');drawFrame(f,c);$('editorOverlay').classList.add('show');bindEditorCanvas(c)}
 function bindEditorCanvas(c){
  let painting=false,last;
@@ -399,13 +401,9 @@ function addUnderlay(){
  f.activeLayer=Math.min(1,f.layers.length-1);delete f._layerCanvases;renderLayerModal();renderStory();scheduleSave();
 }
 function renderV(){renderVPreview();renderVTimeline();renderVClipEditor();renderAudioSummary()}
-function renderVPreview(){
- const box=$('vPreview');if(!box)return;
- const c=app.vcon?.clips?.[selectedVClip];
- if(!c){box.innerHTML='Vコンテ';return}
- const src=getVClipImage(c);
- box.innerHTML=src?`<img src="${src}" alt="${esc(c.label||'Vコンテ')}">${c.dialogue?`<div class="subtitle">${esc(c.dialogue)}</div>`:''}`:`<div>画像なし</div>${c.dialogue?`<div class="subtitle">${esc(c.dialogue)}</div>`:''}`;
-}
+
+/* Removed duplicate declaration: renderVPreview */
+
 
 function renderFrameReferences(f,frameIndex){
  const refs=Array.isArray(f.references)?f.references:[];
@@ -456,26 +454,33 @@ function renderShots(){
  body.innerHTML=rows.map((s)=>{const fi=app.frames.findIndex(f=>f.shotId===s.id),f=fi>=0?app.frames[fi]:null;return `<tr><td>${s.order+1}</td><td><b>${esc(s.name)}</b></td><td>${f?esc(f.name):'-'}</td><td>${esc(f?.note||'')}</td><td><select onchange="updateShot('${s.id}','assignee',this.value)">${memberIdOptions(s.assigneeId,s.assignee)}</select></td><td><select onchange="updateShot('${s.id}','stage',this.value)">${['Layout','Animation','Lighting','Render','Composite'].map(x=>`<option ${x===s.stage?'selected':''}>${x}</option>`).join('')}</select></td><td><select onchange="updateShot('${s.id}','status',this.value)">${['未着手','作業中','確認待ち','修正中','完了'].map(x=>`<option ${x===s.status?'selected':''}>${x}</option>`).join('')}</select></td><td><input type="date" value="${s.due||''}" onchange="updateShot('${s.id}','due',this.value)"></td><td><div class="table-actions"><button class="toolbtn" onclick="editShot('${s.id}')">編集</button><button class="toolbtn" onclick="jumpToFrame('${s.frameId}')">絵コンテ</button><button class="toolbtn" onclick="deleteShot('${s.id}')">削除</button></div></td></tr>`}).join('')||'<tr><td colspan="9"><div class="empty">SHOTがありません</div></td></tr>';
  updateDashboard()
 }
-function updateShot(id,k,v){const s=app.shots.find(x=>x.id===id);if(!s)return;s[k]=v;scheduleSave();renderShots();renderTasks();renderSchedule();updateDashboard()}
+
+/* Removed duplicate declaration: updateShot */
+
 function openShotModal(){openModalHtml('SHOTを追加',`<div class="form"><label>名称<input id="mShotName" value="SH${String(app.shots.length+1).padStart(3,'0')}"></label><label>担当<select id="mShotAssignee">${memberIdOptions()}</select></label><label>工程<select id="mShotStage"><option>Layout</option><option>Animation</option><option>Lighting</option><option>Render</option><option>Composite</option></select></label><label>期限<input id="mShotDue" type="date" value="${days(7)}"></label><button class="btn" onclick="createManualShot()">保存</button></div>`)}
-function createManualShot(){const name=$('mShotName').value.trim();if(!name||!validateNameForSave(name,'SHOT名','shot'))return;const id=uid();app.shots.push({id,order:app.frames.length,name,frameId:null,assignee:$('mShotAssignee').value,stage:$('mShotStage').value,status:'未着手',due:$('mShotDue').value});closeModal();renderShots();scheduleSave()}
+
+/* Removed duplicate declaration: createManualShot */
+
 function editShot(id){const s=app.shots.find(x=>x.id===id);if(!s)return;openModalHtml('SHOT編集',`<div class="form"><label>名称<input id="eName" value="${esc(s.name)}"></label><label>担当<select id="eAssignee">${memberIdOptions(s.assigneeId,s.assignee)}</select></label><label>工程<select id="eStage">${['Layout','Animation','Lighting','Render','Composite'].map(x=>`<option ${x===s.stage?'selected':''}>${x}</option>`).join('')}</select></label><label>状態<select id="eStatus">${['未着手','作業中','確認待ち','修正中','完了'].map(x=>`<option ${x===s.status?'selected':''}>${x}</option>`).join('')}</select></label><label>期限<input id="eDue" type="date" value="${s.due||''}"></label><button class="btn" onclick="saveShotEdit('${id}')">保存</button></div>`)}
-function saveShotEdit(id){const s=app.shots.find(x=>x.id===id),name=$('eName').value.trim();if(!name||!validateNameForSave(name,'SHOT名','shot'))return;Object.assign(s,{name,assignee:$('eAssignee').value,stage:$('eStage').value,status:$('eStatus').value,due:$('eDue').value});closeModal();renderAll();scheduleSave()}
-function deleteShot(id){if(!confirm('SHOTを削除しますか？リンク元Frameは残ります。'))return;const f=app.frames.find(x=>x.shotId===id);if(f)f.shotId=null;app.shots=app.shots.filter(s=>s.id!==id);app.tasks=app.tasks.filter(t=>t.shotId!==id);renderAll();scheduleSave()}
+
+/* Removed duplicate declaration: saveShotEdit */
+
+
+/* Removed duplicate declaration: deleteShot */
+
 function jumpToFrame(frameId){const i=app.frames.findIndex(f=>f.id===frameId);if(i<0)return;activeFrame=i;document.querySelector('[data-view="storyboard"]').click();setTimeout(()=>{document.querySelector(`[data-index="${i}"]`)?.scrollIntoView({behavior:'smooth',block:'center'})},50)}
 
-function membersOptions(selected=''){return '<option value="">未定</option>'+app.members.map(m=>`<option ${m.name===selected?'selected':''}>${esc(m.name)}</option>`).join('')}
+
+/* Removed duplicate declaration: membersOptions */
+
 
 function openTaskModal(editId=null){
  const t=editId?app.tasks.find(x=>x.id===editId):{title:'',description:'',assignee:'',status:'未着手',due:days(7),start:days(0),shotId:'',estimate:1};
  openModalHtml(editId?'タスク編集':'タスク追加',`<div class="form"><label>タイトル<input id="tTitle" value="${esc(t.title)}"></label><label>説明<textarea id="tDesc" rows="3">${esc(t.description||'')}</textarea></label><label>担当<select id="tAssignee">${memberIdOptions(t.assigneeId,t.assignee)}</select></label><label>SHOT<select id="tShot"><option value="">なし</option>${app.shots.map(s=>`<option value="${s.id}" ${s.id===t.shotId?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><label>開始日<input id="tStart" type="date" value="${t.start||days(0)}"></label><label>期限<input id="tDue" type="date" value="${t.due||days(7)}"></label><label>見積ポイント<input id="tEstimate" type="number" min="0.1" step="0.1" value="${t.estimate||1}"></label><label>残ポイント<input id="tRemaining" type="number" min="0" step="0.1" value="${t.remaining??t.estimate??1}"></label><label>状態<select id="tStatus">${['未着手','作業中','確認待ち','修正中','完了'].map(x=>`<option ${x===t.status?'selected':''}>${x}</option>`).join('')}</select></label><button class="btn" onclick="saveTask('${editId||''}')">保存</button></div>`)
 }
-function saveTask(editId){
- const obj={title:$('tTitle').value.trim(),description:$('tDesc').value,assignee:$('tAssignee').value,shotId:$('tShot').value,start:$('tStart').value,due:$('tDue').value,status:$('tStatus').value,estimate:Math.max(.1,+$('tEstimate').value||1)};
- if(!obj.title){alert('タスクのタイトルを入力してください');return}if(obj.start&&obj.due&&obj.start>obj.due){alert('期限は開始日以降に設定してください');return}
- if(editId){Object.assign(app.tasks.find(t=>t.id===editId),obj)}else{app.tasks.push({id:uid(),...obj})}
- closeModal();renderAll();scheduleSave()
-}
+
+/* Removed duplicate declaration: saveTask */
+
 function deleteTask(id){if(confirm('タスクをゴミ箱へ移動しますか？'))trashEntity('task',id)}
 function renderTasks(){const board=$('taskBoard');if(!board)return;const cols=['未着手','作業中','確認待ち','修正中','完了'];board.innerHTML=cols.map(s=>`<div class="column"><b>${s}</b>${app.tasks.filter(t=>t.status===s).map(t=>`<div class="task"><b>${esc(t.title)}</b><div class="sub">${esc(t.assignee||'未定')}・期限 ${t.due||'-'}</div><div class="toolbar" style="margin-top:8px"><button class="toolbtn" onclick="openTaskModal('${t.id}')">編集</button><button class="toolbtn" onclick="deleteTask('${t.id}')">削除</button><button class="toolbtn" onclick="moveTask('${t.id}')">次へ</button></div></div>`).join('')||'<div class="sub" style="margin-top:10px">タスクなし</div>'}</div>`).join('')}
 function moveTask(id){const t=app.tasks.find(x=>x.id===id),seq=['未着手','作業中','確認待ち','修正中','完了'],i=seq.indexOf(t.status);t.status=seq[Math.min(seq.length-1,i+1)];renderAll();scheduleSave()}
@@ -491,13 +496,21 @@ function renderReviews(){const box=$('reviewList');if(!box)return;const f=$('rev
 function openFileModal(editId=null){const f=editId?app.files.find(x=>x.id===editId):{name:'',version:'v01',owner:'',note:'',shotId:''};openModalHtml(editId?'ファイル編集':'ファイル登録',`<div class="form"><label>ファイル名<input id="fName" value="${esc(f.name)}"></label><label>種類<select id="fType"><option ${f.type==='Maya'?'selected':''}>Maya</option><option ${f.type==='Blender'?'selected':''}>Blender</option><option ${f.type==='Photoshop'?'selected':''}>Photoshop</option><option ${f.type==='Substance'?'selected':''}>Substance</option><option ${f.type==='After Effects'?'selected':''}>After Effects</option><option ${f.type==='画像'?'selected':''}>画像</option><option ${f.type==='映像'?'selected':''}>映像</option><option ${!f.type||f.type==='その他'?'selected':''}>その他</option></select></label><label>Version<input id="fVersion" value="${esc(f.version)}"></label><label>更新者<select id="fOwner">${membersOptions(f.owner)}</select></label><label>SHOT<select id="fShot"><option value="">なし</option>${app.shots.map(s=>`<option value="${s.id}" ${s.id===f.shotId?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><label>メモ<textarea id="fNote">${esc(f.note||'')}</textarea></label><label>実ファイル（任意）<input id="fBlob" type="file"></label><button class="btn" onclick="saveFile('${editId||''}')">保存</button></div>`)}
 function saveFile(editId){const obj={name:$('fName').value.trim(),type:$('fType').value||detectFileType($('fName').value),version:$('fVersion').value.trim(),owner:$('fOwner').value,shotId:$('fShot').value,note:$('fNote').value};if(!obj.name){alert('ファイル名を入力してください');return}if(!validateNameForSave(obj.name,'ファイル名','file'))return;const file=$('fBlob').files[0];if(file&&file.size>8*1024*1024){if(!confirm('8MBを超えるため実体は保存せず、ファイル名と管理情報のみ登録します。'))return;obj.note=(obj.note?obj.note+' ':'')+'[実体未保存: '+file.name+']';}const storeFile=file&&file.size<=8*1024*1024?file:null;if(editId){const rec=app.files.find(x=>x.id===editId);Object.assign(rec,obj);if(storeFile){const file=storeFile,r=new FileReader();r.onload=e=>{rec.storedName=file.name;rec.data=e.target.result;closeModal();renderFiles();scheduleSave()};r.readAsDataURL(file);return}}else{const rec={id:uid(),...obj,storedName:'',data:null};if(storeFile){const file=storeFile,r=new FileReader();r.onload=e=>{rec.storedName=file.name;rec.data=e.target.result;app.files.unshift(rec);closeModal();renderFiles();scheduleSave()};r.readAsDataURL(file);return}else app.files.unshift(rec)}closeModal();renderFiles();scheduleSave()}
 function deleteFile(id){if(confirm('ファイル記録をゴミ箱へ移動しますか？'))trashEntity('file',id)}
-function renderFiles(){const box=$('fileList');if(!box)return;box.innerHTML=app.files.map(f=>`<div class="card"><div class="row"><div><b>${esc(f.name)}</b><div class="sub">${esc(f.version)}・${esc(f.owner||'未設定')}・SHOT ${esc(app.shots.find(s=>s.id===f.shotId)?.name||'-')}</div></div><div class="toolbar"><button class="toolbtn" onclick="openFileModal('${f.id}')">編集</button>${f.data?`<button class="toolbtn" onclick="downloadStoredFile('${f.id}')">ダウンロード</button>`:''}<button class="toolbtn" onclick="deleteFile('${f.id}')">削除</button></div></div><div class="sub" style="margin-top:6px">${esc(f.note||'')} ${f.storedName?`・${esc(f.storedName)}`:''}</div></div>`).join('')||'<div class="empty">ファイル記録なし</div>'}
+
+/* Removed duplicate declaration: renderFiles */
+
 
 function downloadStoredFile(id){const f=app.files.find(x=>x.id===id);if(!f?.data)return;const a=document.createElement('a');a.href=f.data;a.download=f.storedName||f.name;a.click()}
 function openMemberModal(editId=null){const m=editId?app.members.find(x=>x.id===editId):{name:'',role:''};openModalHtml(editId?'メンバー編集':'メンバー追加',`<div class="form"><label>名前<input id="mName" value="${esc(m.name)}"></label><label>役割<input id="mRole" value="${esc(m.role)}"></label><button class="btn" onclick="saveMember('${editId||''}')">保存</button></div>`)}
-function saveMember(editId){const obj={name:$('mName').value,role:$('mRole').value};if(editId)Object.assign(app.members.find(m=>m.id===editId),obj);else app.members.push({id:uid(),...obj});closeModal();renderAll();scheduleSave()}
-function deleteMember(id){const m=app.members.find(x=>x.id===id);if(confirm(`${m?.name||''}を削除しますか？`)){app.members=app.members.filter(x=>x.id!==id);app.tasks.forEach(t=>{if(t.assignee===m.name)t.assignee=''});app.shots.forEach(s=>{if(s.assignee===m.name)s.assignee=''});renderAll();scheduleSave()}}
-function renderMembers(){const box=$('memberList');if(!box)return;box.innerHTML=app.members.map(m=>`<div class="card"><b>${esc(m.name)}</b><div class="sub">${esc(m.role||'役割未設定')}</div><div class="kpi">${app.tasks.filter(t=>t.assignee===m.name&&t.status!=='完了').length}</div><div class="label">未完了タスク</div><div class="toolbar" style="margin-top:10px"><button class="toolbtn" onclick="openMemberModal('${m.id}')">編集</button><button class="toolbtn" onclick="deleteMember('${m.id}')">削除</button></div></div>`).join('')}
+
+/* Removed duplicate declaration: saveMember */
+
+
+/* Removed duplicate declaration: deleteMember */
+
+
+/* Removed duplicate declaration: renderMembers */
+
 
 function renderSchedule(){
  const g=$('scheduleGantt');if(!g)return;
@@ -527,12 +540,9 @@ function getVClipImage(clip){
  const f=app.frames.find(x=>x.id===clip.frameId);
  return f?getFrameImageForV(f):clip.data||''
 }
-function getFrameImageForV(f){
- const layers=(f.layers||[]).filter(l=>l.visible&&l.image);
- if(!layers.length)return '';
- if(layers.length===1)return layers[0].image;
- return layers[0].image;
-}
+
+/* Removed duplicate declaration: getFrameImageForV */
+
 function ensureVClipForFrame(frameId){
  let clip=app.vcon.clips.find(c=>c.frameId===frameId&&c.sourceType==='frame');
  if(!clip){const f=app.frames.find(x=>x.id===frameId);if(!f)return;clip=makeVClipFromFrame(f);app.vcon.clips.push(clip)}
@@ -552,17 +562,9 @@ function selectMaterialAndAdd(i){
 function addSelectedMaterialToTimeline(){
  if(app.frames.length)selectMaterialAndAdd(activeFrame)
 }
-function renderVTimeline(){
- const box=$('vTimeline');if(!box)return;box.innerHTML='';
- app.vcon.clips.forEach((c,i)=>{
-   const d=document.createElement('div');d.className='clip'+(i===selectedVClip?' active':'');d.draggable=true;
-   const src=getVClipImage(c);
-   d.innerHTML=`${src?`<img src="${src}">`:'<div style="aspect-ratio:16/9;background:#eef2ff;display:flex;align-items:center;justify-content:center">画像なし</div>'}<b>${esc(c.label||`Clip ${i+1}`)}</b><div class="sub">${c.duration}s・${esc(c.transition)}</div>`;
-   d.onclick=()=>{selectedVClip=i;renderVcon()};
-   d.addEventListener('dragstart',()=>vDragFrom=i);d.addEventListener('dragover',e=>e.preventDefault());d.addEventListener('drop',e=>{e.preventDefault();if(vDragFrom==null||vDragFrom===i)return;const x=app.vcon.clips.splice(vDragFrom,1)[0];app.vcon.clips.splice(i,0,x);selectedVClip=i;vDragFrom=null;renderVcon();scheduleSave()});
-   box.appendChild(d)
- })
-}
+
+/* Removed duplicate declaration: renderVTimeline */
+
 function renderVClipEditor(){
  const box=$('clipEditor');if(!box)return;const c=app.vcon.clips[selectedVClip];
  if(!c){box.innerHTML='<div class="empty">タイムラインからクリップを選択してください</div>';return}
@@ -579,9 +581,9 @@ function moveTimelineClip(d){
 }
 function removeTimelineClip(){if(selectedVClip<0)return;app.vcon.clips.splice(selectedVClip,1);selectedVClip=Math.max(0,Math.min(selectedVClip,app.vcon.clips.length-1));renderVcon();scheduleSave()}
 function clearTimeline(){if(!app.vcon.clips.length)return;if(confirm('Vコンテのタイムラインを空にしますか？')){app.vcon.clips=[];selectedVClip=-1;renderVcon();scheduleSave()}}
-function saveVconVersion(){
- const copy={clips:structuredClone(app.vcon.clips),savedAt:new Date().toISOString(),version:`v${app.vcon.versions.length+1}`};app.vcon.versions.push(copy);scheduleSave();alert(`Vコンテ ${copy.version} を保存しました。`)
-}
+
+/* Removed duplicate declaration: saveVconVersion */
+
 function renderAudioSummary(){
  const b=$('bgmInfo');if(b)b.textContent=app.bgm?`登録: ${app.bgm.name}`:'BGM未登録';
  const f=app.vcon.clips[selectedVClip];const se=(f?.se||[]).length;$('seInfo').textContent=se?`${se}件のSE`:'選択クリップにSEなし';
@@ -624,15 +626,25 @@ function migrateMemberLinks(){
 }
 function memberLabel(id,fallback=''){return app.members.find(m=>m.id===id)?.name||fallback||'未定'}
 function memberIdOptions(selectedId='',legacy=''){const sid=selectedId||app.members.find(m=>m.name===legacy)?.id||'';return '<option value="">未定</option>'+app.members.map(m=>`<option value="${m.id}" ${m.id===sid?'selected':''}>${esc(m.name)}</option>`).join('')}
-function validateNameForSave(value,label){const rules=(app.namingRules||[]).filter(r=>r.pattern);if(!rules.length)return true;const ok=rules.some(r=>{try{return new RegExp(r.pattern).test(value)}catch(e){return false}});if(ok)return true;return confirm(`${label}「${value}」は登録済み命名規則に適合しません。例外として保存しますか？`)}
+
+/* Removed duplicate declaration: validateNameForSave */
+
 function openProjectModal(){openModalHtml('プロジェクト編集',`<div class="form"><label>プロジェクト名<input id="pName" value="${esc(app.project.name||'')}"></label><label>説明<textarea id="pDesc" rows="3">${esc(app.project.description||'')}</textarea></label><button class="btn" onclick="saveProjectEdit()">保存</button></div>`)}
 function saveProjectEdit(){const name=$('pName').value.trim();if(!name){alert('プロジェクト名を入力してください');return}app.project={name,description:$('pDesc').value.trim()};closeModal();renderAll();scheduleSave()}
-function createTaskFromReview(id){const r=app.reviews.find(x=>x.id===id);if(!r)return;const shot=app.shots.find(s=>s.id===r.shotId);app.tasks.push({id:uid(),title:`修正: ${shot?.name||'プロジェクト全体'}`,description:r.text||'',assignee:'',assigneeId:'',status:'未着手',start:days(0),due:days(7),shotId:r.shotId||'',estimate:1,sourceReviewId:r.id});r.status='修正中';renderAll();scheduleSave();alert('修正タスクを作成しました')}
+
+/* Removed duplicate declaration: createTaskFromReview */
+
 function trashEntity(type,id){const map={task:'tasks',review:'reviews',file:'files'},key=map[type];if(!key)return;const i=app[key].findIndex(x=>x.id===id);if(i<0)return;app.trash.unshift({id:uid(),type,data:app[key].splice(i,1)[0],deletedAt:new Date().toISOString()});renderAll();scheduleSave()}
-function restoreTrash(id){const i=app.trash.findIndex(x=>x.id===id);if(i<0)return;const x=app.trash.splice(i,1)[0],map={task:'tasks',review:'reviews',file:'files'};app[map[x.type]].push(x.data);renderAll();scheduleSave()}
+
+/* Removed duplicate declaration: restoreTrash */
+
 function emptyTrash(){if(!app.trash.length||!confirm('ゴミ箱を完全に空にしますか？'))return;app.trash=[];renderAll();scheduleSave()}
-function renderTrash(){const box=$('trashArea');if(!box)return;if(!app.trash.length){box.innerHTML='<div class="sub">ゴミ箱は空です</div>';return}box.innerHTML=`<div class="trashbar"><b>ゴミ箱 ${app.trash.length}件</b><button class="toolbtn" onclick="emptyTrash()">完全に空にする</button></div>`+app.trash.slice(0,10).map(x=>`<div class="row"><span>${esc(x.data.title||x.data.name||x.data.text||x.type)}</span><button class="toolbtn" onclick="restoreTrash('${x.id}')">復元</button></div>`).join('')}
-function compositeFrameData(f,w=640,h=360){return new Promise(resolve=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);const visible=(f.layers||[]).map((l,i)=>[l,i]).filter(([l])=>l.visible);let n=0;const next=()=>{if(n>=visible.length){resolve(c.toDataURL('image/jpeg',.88));return}const [l,i]=visible[n++];getLayerCanvas(f,i,w,h).then(lc=>{if(lc)ctx.drawImage(lc,0,0,w,h);next()})};next()})}
+
+/* Removed duplicate declaration: renderTrash */
+
+
+/* Removed duplicate declaration: compositeFrameData */
+
 async function setCompositedImage(img,frameId){const f=app.frames.find(x=>x.id===frameId);if(!img||!f)return;img.src=await compositeFrameData(f)}
 
 // Stable overrides for member IDs and composite V-conte output.
@@ -691,14 +703,15 @@ let cloudClient=null,cloudUser=null,cloudProjectId=localStorage.getItem('cgHubCl
 function cloudConfig(){return {url:DEFAULT_SUPABASE_URL,key:DEFAULT_SUPABASE_KEY}}
 function setCloudStatus(text,state='',detail=''){const dot=$('cloudDot'),status=$('cloudStatus'),user=$('cloudUser');if(status)status.textContent=text;if(dot)dot.className='clouddot '+state;if(user)user.textContent=detail||cloudUser?.email||'Supabase未接続';const out=$('cloudSignOutBtn');if(out)out.style.display=cloudUser?'inline-block':'none'}
 function cloudToast(text){const n=$('syncNote');if(!n)return;n.textContent=text;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),1800)}
+
 function inviteProjectFromUrl(){const id=new URLSearchParams(location.search).get('project')||'';return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?id:''}
 function rememberInviteFromUrl(){const id=inviteProjectFromUrl();if(id)localStorage.setItem('cgHubPendingInvite',id);return id}
 function pendingInviteId(){return localStorage.getItem('cgHubPendingInvite')||''}
-function clearPendingInvite(){localStorage.removeItem('cgHubPendingInvite');const u=new URL(location.href);u.searchParams.delete('project');history.replaceState({},'',u.pathname+u.search+u.hash)}
+function clearInviteFromUrl(){localStorage.removeItem('cgHubPendingInvite');const u=new URL(location.href);u.searchParams.delete('project');history.replaceState({},'',u.pathname+u.search+u.hash)}
 function makeInviteLink(projectId){const u=new URL(location.origin+location.pathname);u.searchParams.set('project',projectId);return u.href}
 async function copyTextSafe(text){try{await navigator.clipboard.writeText(text);return true}catch(e){const a=document.createElement('textarea');a.value=text;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok}}
-async function copyInviteLink(projectId){if(!projectId){alert('共有プロジェクトを選択してください');return}const link=makeInviteLink(projectId);if(await copyTextSafe(link))cloudToast('招待リンクをコピーしました');else prompt('次の招待リンクをコピーしてください',link)}
-async function acceptPendingInvite(){const id=pendingInviteId();if(!id||!cloudClient||!cloudUser)return false;const {data:mine,error:checkError}=await cloudClient.from('project_members').select('project_id').eq('project_id',id).eq('user_id',cloudUser.id).maybeSingle();if(checkError){alert('招待の確認に失敗しました: '+checkError.message);return false}if(!mine){const {error}=await cloudClient.from('project_members').insert({project_id:id,user_id:cloudUser.id,role:'member'});if(error){const m=String(error.message||'').toLowerCase();alert(m.includes('foreign key')?'招待先のプロジェクトが存在しません。':m.includes('permission')||m.includes('row-level security')?'この招待リンクでは参加できません。':'招待への参加に失敗しました: '+error.message);return false}}clearPendingInvite();await selectCloudProject(id);cloudToast('招待されたプロジェクトに参加しました');return true}
+async function copyInviteLink(projectId=cloudProjectId){if(!projectId){alert('共有プロジェクトを選択してください');return}const link=makeInviteLink(projectId);if(await copyTextSafe(link))cloudToast('招待リンクをコピーしました');else prompt('この招待リンクをコピーしてください',link)}
+async function acceptPendingInvite(){const id=pendingInviteId();if(!id||!cloudClient||!cloudUser)return false;const {data:mine,error:ce}=await cloudClient.from('project_members').select('project_id').eq('project_id',id).eq('user_id',cloudUser.id).maybeSingle();if(ce){alert('招待の確認に失敗しました: '+ce.message);return false}if(!mine){const {error}=await cloudClient.from('project_members').insert({project_id:id,user_id:cloudUser.id,role:'member'});if(error){const m=String(error.message||'').toLowerCase();alert(m.includes('foreign key')?'招待先のプロジェクトが存在しません。':m.includes('permission')||m.includes('row-level security')?'この招待リンクでは参加できません。':'招待への参加に失敗しました: '+error.message);return false}}clearInviteFromUrl();await selectCloudProject(id);cloudToast('招待されたプロジェクトに参加しました');return true}
 function openCloudPanel(){
  const c=cloudConfig();
  if(!c.key){openCloudSettings();return}
@@ -706,19 +719,18 @@ function openCloudPanel(){
  openCloudProjects();
 }
 function openCloudSettings(){openModalHtml('Supabase接続設定',`<div class="form"><div class="notice">Project URLとPublishable keyはコードに固定されています。入力は不要です。</div><label>固定済みProject URL<input value="${esc(DEFAULT_SUPABASE_URL)}" readonly></label><button class="btn" onclick="closeModal();openCloudAuth()">ログインへ進む</button></div>`)}
-async function saveCloudSettings(){const url=$('cloudUrl').value.trim().replace(/\/$/,''),key=$('cloudKey').value.trim();if(!/^https:\/\/.+\.supabase\.co$/.test(url)){alert('Project URLを確認してください');return}if(!key.startsWith('sb_publishable_')&&!key.startsWith('eyJ')){alert('Publishable keyを確認してください');return}localStorage.setItem('cgHubSupabaseUrl',url);localStorage.setItem('cgHubSupabaseKey',key);closeModal();await initCloudHub();openCloudAuth()}
 function openCloudAuth(){openModalHtml('チーム共有ログイン',`<div class="form"><div class="notice">${pendingInviteId()?'招待リンクを確認しました。ログインまたは新規登録後、自動的に共有プロジェクトへ参加します。':'Supabase Authenticationに登録するメールアドレスとパスワードを使用します。'}</div><label>メールアドレス<input id="cloudEmail" type="email" autocomplete="email"></label><label>パスワード<input id="cloudPassword" type="password" minlength="6" autocomplete="current-password"></label><div class="authgrid"><button class="btn" onclick="cloudSignIn()">ログイン</button><button class="btn light" onclick="cloudSignUp()">新規登録</button></div><button class="toolbtn" onclick="openCloudSettings()">接続先を変更</button></div>`)}
 async function cloudSignUp(){if(!cloudClient)return;const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;const {error}=await cloudClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin}});if(error){alert(error.message);return}alert('登録メールを確認し、認証リンクを開いてください。認証後にログインできます。')}
 async function cloudSignIn(){if(!cloudClient)return;const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;const {data,error}=await cloudClient.auth.signInWithPassword({email,password});if(error){alert(error.message);return}cloudUser=data.user;closeModal();setCloudStatus('接続済み','ok');if(!(await acceptPendingInvite()))await openCloudProjects()}
 async function cloudSignOut(){if(cloudClient)await cloudClient.auth.signOut();cloudUser=null;cloudProjectId='';localStorage.removeItem('cgHubCloudProjectId');if(cloudChannel)cloudClient.removeChannel(cloudChannel);cloudChannel=null;setCloudStatus('ローカル保存','','Supabaseからログアウトしました')}
 async function fetchMyCloudProjects(){if(!cloudClient||!cloudUser)return [];const {data:members,error}=await cloudClient.from('project_members').select('project_id, role').eq('user_id',cloudUser.id);if(error)throw error;const ids=(members||[]).map(x=>x.project_id);if(!ids.length)return [];const {data:projects,error:pe}=await cloudClient.from('projects').select('id,name,updated_at').in('id',ids).order('updated_at',{ascending:false});if(pe)throw pe;return (projects||[]).map(p=>({...p,role:members.find(m=>m.project_id===p.id)?.role||'member'}))}
-async function openCloudProjects(){try{const projects=await fetchMyCloudProjects();openModalHtml('共有プロジェクト',`<div class="form"><div class="notice">既存プロジェクトを開くか、現在のローカルデータから新しい共有プロジェクトを作成します。</div><div class="projectpick">${projects.map(p=>`<div class="row"><div><b>${esc(p.name)}</b><div class="sub">${esc(p.role)}・${esc(p.updated_at||'')}</div><div class="cloudid">${p.id}</div></div><div class="toolbar"><button class="toolbtn" onclick="copyInviteLink('${p.id}')">招待リンクをコピー</button><button class="btn light" onclick="selectCloudProject('${p.id}')">開く</button></div></div>`).join('')||'<div class="empty">参加中の共有プロジェクトはありません</div>'}</div><button class="btn" onclick="createCloudProject()">現在のデータを新しい共有プロジェクトにする</button><label>共有されたProject IDで参加<input id="joinProjectId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label><button class="toolbtn" onclick="joinCloudProject()">Project IDで参加</button><button class="toolbtn" onclick="openCloudSettings()">Supabase接続設定</button></div>`)}catch(e){alert('共有プロジェクト一覧を取得できません: '+e.message)}}
+async function openCloudProjects(){try{const projects=await fetchMyCloudProjects();openModalHtml('共有プロジェクト',`<div class="form"><div class="notice">既存プロジェクトを開くか、現在のローカルデータから新しい共有プロジェクトを作成します。</div><div class="projectpick">${projects.map(p=>`<div class="row"><div><b>${esc(p.name)}</b><div class="sub">${esc(p.role)}・${esc(p.updated_at||'')}</div><div class="cloudid">${p.id}</div></div><div class="toolbar"><button class="toolbtn" onclick="copyInviteLink('${p.id}')">招待リンクをコピー</button><button class="btn light" onclick="selectCloudProject('${p.id}')">開く</button></div></div>`).join('')||'<div class="empty">参加中の共有プロジェクトはありません</div>'}</div><button class="btn" onclick="createCloudProject()">現在のデータを新しい共有プロジェクトにする</button><label>共有されたProject IDで参加<input id="joinProjectId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label><button class="toolbtn" onclick="joinCloudProject()">Project IDで参加</button></div>`)}catch(e){alert('共有プロジェクト一覧を取得できません: '+e.message)}}
 async function createCloudProject(){if(!cloudClient||!cloudUser)return;const payload={name:app.project.name||'CG Production Hub',data:cleanProjectData(),updated_at:new Date().toISOString(),owner_id:cloudUser.id};const {data:p,error}=await cloudClient.from('projects').insert(payload).select('id').single();if(error){alert('プロジェクト作成失敗: '+error.message);return}const {error:me}=await cloudClient.from('project_members').insert({project_id:p.id,user_id:cloudUser.id,role:'owner'});if(me){await cloudClient.from('projects').delete().eq('id',p.id);alert('オーナー登録失敗: '+me.message);return}await selectCloudProject(p.id);cloudToast('共有プロジェクトを作成しました')}
 async function joinCloudProject(){const id=$('joinProjectId').value.trim();if(!/^[0-9a-f-]{36}$/i.test(id)){alert('Project IDを確認してください');return}const {error}=await cloudClient.from('project_members').insert({project_id:id,user_id:cloudUser.id,role:'member'});if(error){alert('参加できません: '+error.message);return}await selectCloudProject(id)}
 async function selectCloudProject(id){cloudProjectId=id;localStorage.setItem('cgHubCloudProjectId',id);closeModal();const ok=await loadCloudProject();if(ok)subscribeCloudProject();}
 async function loadCloudProject(){if(!cloudClient||!cloudProjectId)return false;setCloudStatus('読込中','warn');const {data,error}=await cloudClient.from('projects').select('data,updated_at,name').eq('id',cloudProjectId).single();if(error){setCloudStatus('読込エラー','warn',error.message);return false}if(data?.data){cloudApplyingRemote=true;app=data.data;ensureVconLinks();renderAll();await dbPut(cleanProjectData());cloudApplyingRemote=false;cloudLastUpdated=data.updated_at||'';setCloudStatus('同期中','ok',cloudUser?.email||'');cloudToast('クラウドから読み込みました');return true}return false}
 async function saveCloudProject(){if(!cloudClient||!cloudUser||!cloudProjectId||cloudApplyingRemote)return;const now=new Date().toISOString();const {error}=await cloudClient.from('projects').update({name:app.project.name||'CG Production Hub',data:cleanProjectData(),updated_at:now}).eq('id',cloudProjectId);if(error){setCloudStatus('保存エラー','warn',error.message);return}cloudLastUpdated=now;setCloudStatus('同期中','ok',cloudUser.email);cloudToast('クラウドへ保存しました')}
-function scheduleCloudSave(){clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(saveCloudProject,1500)}
+function scheduleCloudSave(){clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(saveCloudProject,2500)}
 function subscribeCloudProject(){if(!cloudClient||!cloudProjectId)return;if(cloudChannel)cloudClient.removeChannel(cloudChannel);cloudChannel=cloudClient.channel('cg-project-'+cloudProjectId).on('postgres_changes',{event:'UPDATE',schema:'public',table:'projects',filter:`id=eq.${cloudProjectId}`},async payload=>{const changed=payload.new;if(!changed?.data||changed.updated_at===cloudLastUpdated)return;cloudApplyingRemote=true;app=changed.data;ensureVconLinks();renderAll();await dbPut(cleanProjectData());cloudApplyingRemote=false;cloudLastUpdated=changed.updated_at||'';cloudToast('チームの更新を反映しました')}).subscribe()}
 async function initCloudHub(){localStorage.removeItem('cgHubSupabaseUrl');localStorage.removeItem('cgHubSupabaseKey');const c=cloudConfig();if(!c.key){setCloudStatus('ローカル保存','','クラウド設定を開いてURLとKeyを入力');return}try{cloudClient=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data:{session}}=await cloudClient.auth.getSession();cloudUser=session?.user||null;cloudClient.auth.onAuthStateChange((_e,session)=>{cloudUser=session?.user||null;setCloudStatus(cloudUser?'接続済み':'ローカル保存',cloudUser?'ok':'',cloudUser?.email||'Supabase未ログイン')});if(!cloudUser){setCloudStatus('ログイン待ち','warn','クラウド設定からログイン');return}setCloudStatus('接続済み','ok',cloudUser.email);if(await acceptPendingInvite())return;if(cloudProjectId){const ok=await loadCloudProject();if(ok)subscribeCloudProject()}}catch(e){setCloudStatus('接続エラー','warn',e.message)}}
 const _localScheduleSave=scheduleSave;scheduleSave=function(){_localScheduleSave();if(cloudUser&&cloudProjectId&&!cloudApplyingRemote)scheduleCloudSave()};
